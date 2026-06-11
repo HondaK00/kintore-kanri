@@ -1,0 +1,24 @@
+node_modules/
+dist/
+dev-dist/
+.screenshots/
+*.log
+.DS_Store
+
+# Capacitor が cap sync で生成するWeb資産（ソースはdist/から都度コピー）
+android/app/src/main/assets/public/
+ios/App/App/public/
+
+# Android ビルド成果物
+android/build/
+android/app/build/
+android/.gradle/
+android/.idea/
+android/local.properties
+android/capacitor-cordova-android-plugins/
+
+# iOS ビルド成果物
+ios/App/build/
+ios/App/Pods/
+ios/DerivedData/
+ios/App/output/
