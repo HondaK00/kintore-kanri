@@ -1,7 +1,37 @@
 # Web版（PWA）のリリース手順
 
-スマホ対応のWeb版を、無料のHTTPS静的ホスティングに公開する手順です。
-所要時間は約5〜10分。**サーバー管理不要・運用コストゼロ**で運用できます。
+> ✅ **公開済み: https://hondak00.github.io/kintore-kanri/**
+> GitHub Pages（個人アカウント HondaK00）で配信中。`main` ブランチに push するたび
+> GitHub Actions が自動でビルド＆再デプロイします（更新は push するだけ）。
+
+以下は現在の構成（GitHub Pages）と、将来別ホスティングへ移す場合の手順です。
+いずれも**サーバー管理不要・運用コストゼロ**です。
+
+---
+
+## 現在の構成: GitHub Pages（自動デプロイ）
+
+- リポジトリ: `HondaK00/kintore-kanri`（公開）
+- デプロイ定義: `.github/workflows/deploy.yml`
+- 公開URL: `https://hondak00.github.io/kintore-kanri/`
+
+更新方法（コードを変えたら）:
+
+```bash
+export DEVELOPER_DIR=/Library/Developer/CommandLineTools  # macОSのgitライセンス回避（このマシンのみ）
+git add -A && git commit -m "変更内容"
+git push
+# → GitHub Actions が自動でビルドして数分で本番反映
+```
+
+> サブパス配信のため、Pages用ビルドは `VITE_BASE=/kintore-kanri/` を使います
+> （ワークフロー内で設定済み。ローカルの `npm run build` は通常どおり `/` のままでOK）。
+
+---
+
+## （任意）別の無料HTTPSホスティングに移す場合
+
+所要時間は約5〜10分。
 
 > 前提: PWAをスマホのホーム画面に「アプリとして」追加するには **HTTPS** での配信が必須です。
 > 以下のどのホスティングも無料でHTTPSが付きます。
