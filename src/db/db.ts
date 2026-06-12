@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import { PRESET_EXERCISES, PRESET_ROUTINES } from './presets';
+import { EXTRA_EXERCISES, PRESET_EXERCISES, PRESET_ROUTINES } from './presets';
 import type { MuscleTarget } from './muscles';
 
 export type Sex = 'male' | 'female';
@@ -126,6 +126,29 @@ class KintoreDB extends Dexie {
     this.version(2).stores({
       weeklyPlan: 'weekday',
     });
+
+    // v3: 一般的なジムのマシン/フリーウェイト/ケーブル種目を既存DBにも追加
+    // スキーマ変更はないが、テーブル削除でないことを明示するため全テーブルを再宣言する
+    this.version(3)
+      .stores({
+        profile: 'id',
+        exercises: '++id, bodyPart',
+        routines: '++id, sortOrder',
+        workouts: '++id, date, exerciseId, [exerciseId+date]',
+        foods: '++id, name, useCount',
+        mealLogs: '++id, date',
+        bodyLogs: '++id, &date',
+        activityLogs: '++id, &date',
+        weeklyPlan: 'weekday',
+      })
+      .upgrade(async (tx) => {
+        const existing = new Set((await tx.table('exercises').toArray()).map((e) => e.name));
+        const toAdd = EXTRA_EXERCISES.filter((e) => !existing.has(e.name)).map((e) => ({
+          ...e,
+          isPreset: true,
+        }));
+        if (toAdd.length) await tx.table('exercises').bulkAdd(toAdd);
+      });
 
     this.on('populate', async () => {
       const ids = await this.exercises.bulkAdd(

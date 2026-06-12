@@ -47,8 +47,29 @@ try {
   await settingsBack.click();
   await page.waitForSelector('text=今日のカロリー収支');
 
+  // --- 種目ライブラリ: 種目数と新種目の検索 ---
+  const exCount = await page.evaluate(
+    () =>
+      new Promise((res, rej) => {
+        const req = indexedDB.open('kintore-db');
+        req.onsuccess = () => {
+          const c = req.result.transaction('exercises', 'readonly').objectStore('exercises').count();
+          c.onsuccess = () => res(c.result);
+          c.onerror = () => rej(c.error);
+        };
+        req.onerror = () => rej(req.error);
+      }),
+  );
+  if (exCount < 180) throw new Error(`種目数が不足: ${exCount}（期待 183前後）`);
+  console.log(`  種目数: ${exCount}`);
+
   // --- 筋トレ: ルーティン開始 + セット入力 ---
   await tab('筋トレ');
+  // 種目追加から新種目「ハックスクワット」を検索できるか
+  await page.locator('button:has-text("種目追加")').click();
+  await page.locator('input[placeholder="種目名で検索"]').fill('ハックスクワット');
+  await page.waitForSelector('text=ハックスクワット');
+  await page.mouse.click(10, 10); // ピッカーを閉じる
   await page.locator('button:has-text("胸の日")').click();
   await page.waitForSelector('text=ベンチプレス');
   const bench = page.locator('div.rounded-2xl').filter({ hasText: 'ベンチプレス' }).first();
