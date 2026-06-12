@@ -1,5 +1,6 @@
 import { lazy, Suspense, useState } from 'react';
 import { TabBar } from './components/TabBar';
+import { RestTimer } from './components/RestTimer';
 import HomePage from './pages/Home';
 import WorkoutPage from './pages/Workout';
 import MealsPage from './pages/Meals';
@@ -38,6 +39,7 @@ export default function App() {
           </Suspense>
         )}
       </main>
+      <RestTimer visible={tab === 'workout'} />
       <TabBar tab={tab} onChange={setTab} />
       {settingsOpen && <SettingsPage onClose={() => setSettingsOpen(false)} />}
     </div>

@@ -91,6 +91,29 @@ try {
   if (firstWeight !== '65') throw new Error(`set-key regression: 削除後の先頭重量が65でなく${firstWeight}`);
   await shot('03-workout.png');
 
+  // --- レストタイマー: 開始→カウントダウン表示→終了 ---
+  await page.locator('button[aria-label="レストタイマー"]').click();
+  await page.waitForSelector('text=レストタイマー');
+  await page.locator('div.fixed.z-50 button:has-text("1:30")').click(); // 90秒で開始
+  await page.waitForSelector('text=セット追加時に自動でスタート', { state: 'hidden' }).catch(() => {});
+  await page.waitForTimeout(400);
+  await shot('15-rest-timer.png');
+  const timerLabel = await page.locator('button[aria-label="レストタイマー"]').innerText();
+  if (!/1:[0-9]{2}/.test(timerLabel)) throw new Error(`タイマー表示が不正: ${timerLabel}`);
+  await page.locator('div.fixed.z-50 button:has-text("終了")').click(); // 停止
+  await page.mouse.click(10, 10);
+
+  // --- プレート計算機: 100kg/20kgバー → 25×1, 10×1, 5×1 ---
+  const benchCard = page.locator('div.rounded-2xl').filter({ hasText: 'ベンチプレス' }).first();
+  await benchCard.locator('button[aria-label="プレート計算機"]').click();
+  await page.waitForSelector('text=プレート計算機');
+  await page.locator('div.fixed.z-50 input').first().fill('100');
+  await page.keyboard.press('Enter');
+  await page.waitForSelector('text=片側 40 kg');
+  await page.waitForSelector('text=25kg × 1');
+  await shot('16-plate-calc.png');
+  await page.mouse.click(10, 10);
+
   // --- 筋肉図（対象筋ハイライト）: インクラインダンベルプレス＝大胸筋上部 ---
   const incline = page.locator('div.rounded-2xl').filter({ hasText: 'インクラインダンベルプレス' }).first();
   await incline.locator('button[aria-label="対象筋を見る"]').click();

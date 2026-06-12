@@ -1,16 +1,18 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { CalendarCheck, Copy, Play, Plus, Trash2, X } from 'lucide-react';
+import { CalendarCheck, Calculator, Copy, Play, Plus, Trash2, X } from 'lucide-react';
 import { db, newSetId, type Exercise, type Routine, type WorkoutEntry, type WorkoutSet } from '../db/db';
 import { useExerciseMap, usePrevEntry, useRoutines, useWeeklyPlan } from '../lib/hooks';
 import { resolveMuscles } from '../db/muscles';
 import { fmtWeight } from '../lib/calc';
 import { fmtMD, parseDate } from '../lib/date';
+import { maybeAutoStartRest } from '../lib/restTimer';
 import { Card, EmptyState } from '../components/ui';
 import { DateNav } from '../components/DateNav';
 import { Stepper } from '../components/inputs';
 import { ExercisePicker } from '../components/ExercisePicker';
 import { MuscleMap, MuscleLegend } from '../components/MuscleMap';
+import { PlateCalcSheet } from '../components/PlateCalc';
 import { Sheet } from '../components/Sheet';
 
 const WEEKDAYS = ['日', '月', '火', '水', '木', '金', '土'];
@@ -122,10 +124,12 @@ function ExerciseCard({ entry, exercise }: { entry: WorkoutEntry; exercise?: Exe
   const prev = usePrevEntry(entry.exerciseId, entry.date);
   const name = exercise?.name ?? '削除済み種目';
   const [muscleOpen, setMuscleOpen] = useState(false);
+  const [plateOpen, setPlateOpen] = useState(false);
   const muscles = exercise
     ? resolveMuscles(exercise)
     : { primary: [], secondary: [] };
   const hasMuscles = muscles.primary.length > 0 || muscles.secondary.length > 0;
+  const lastWeight = entry.sets[entry.sets.length - 1]?.weightKg ?? prev?.sets[0]?.weightKg;
 
   // 連続入力時に古いentryスナップショットで上書きしないよう、DB上の現在値に対して更新する
   const mutateSets = (fn: (sets: WorkoutSet[]) => WorkoutSet[]) =>
@@ -141,6 +145,7 @@ function ExerciseCard({ entry, exercise }: { entry: WorkoutEntry; exercise?: Exe
       const last = sets[sets.length - 1] ?? prev?.sets[0] ?? { weightKg: 0, reps: 10 };
       return [...sets, { weightKg: last.weightKg, reps: last.reps, id: newSetId() }];
     });
+    maybeAutoStartRest(); // 設定ONならレストタイマーを自動開始
   };
 
   const updateSet = (id: string, patch: Partial<WorkoutSet>) => {
@@ -229,7 +234,19 @@ function ExerciseCard({ entry, exercise }: { entry: WorkoutEntry; exercise?: Exe
           <span className="w-[120px] text-center">重量 (kg)</span>
           <span className="w-3" />
           <span className="w-[108px] text-center">回数</span>
+          <button
+            type="button"
+            onClick={() => setPlateOpen(true)}
+            className="ml-auto flex h-7 w-7 items-center justify-center rounded-full text-slate-300 transition active:bg-slate-100"
+            aria-label="プレート計算機"
+          >
+            <Calculator size={14} />
+          </button>
         </div>
+      )}
+
+      {plateOpen && (
+        <PlateCalcSheet open onClose={() => setPlateOpen(false)} initialWeight={lastWeight} />
       )}
 
       <div className="mt-1 space-y-2">
