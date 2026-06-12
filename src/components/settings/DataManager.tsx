@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Download, ShieldCheck, Upload } from 'lucide-react';
 import { db } from '../../db/db';
-import { exportData, importData, downloadText, IMPORT_MAX_BYTES } from '../../lib/repo';
+import { exportData, importData, IMPORT_MAX_BYTES } from '../../lib/repo';
+import { saveTextFile } from '../../native/backup';
 import { todayStr } from '../../lib/date';
 import { isStoragePersisted, requestPersistentStorage } from '../../lib/storage';
 import { getLastBackupAt, markBackedUp } from '../../lib/backupMeta';
@@ -36,7 +37,7 @@ export function DataManager() {
   const doExport = async () => {
     setBusy(true);
     try {
-      downloadText(`kintore-backup-${todayStr()}.json`, await exportData());
+      await saveTextFile(`kintore-backup-${todayStr()}.json`, await exportData());
       const now = Date.now();
       markBackedUp(now);
       setLastBackup(new Date(now));

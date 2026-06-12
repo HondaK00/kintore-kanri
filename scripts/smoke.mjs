@@ -147,9 +147,17 @@ try {
   await (await dl).cancel?.();
   await page.waitForSelector('text=最終バックアップ:');
 
-  // --- 週間スケジュール: 今日の曜日に「脚の日」を割り当て ---
+  // --- リマインダー設定（ネイティブ通知のUI。Webでは案内表示）---
   const settingsBack2 = page.locator('div.fixed.z-40 header button');
   await settingsBack2.click(); // データ管理 → メニュー
+  await page.locator('button:has-text("リマインダー")').click();
+  await page.waitForSelector('text=トレーニングのリマインダー');
+  await page.locator('button[aria-label="リマインダーの切替"]').click(); // ON → 時刻入力が出る
+  await page.waitForSelector('text=通知する時刻');
+  await shot('14-reminder.png');
+  await settingsBack2.click(); // リマインダー → メニュー
+
+  // --- 週間スケジュール: 今日の曜日に「脚の日」を割り当て ---
   await page.locator('button:has-text("週間スケジュール")').click();
   await page.waitForSelector('text=曜日ごとのメニュー');
   const wd = await page.evaluate(() => new Date().getDay());

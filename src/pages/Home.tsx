@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Settings, ChevronRight, Dumbbell, CloudUpload, CalendarCheck, X } from 'lucide-react';
+import { Settings, ChevronRight, Dumbbell, CloudUpload, CalendarCheck, HeartPulse, X } from 'lucide-react';
 import { db } from '../db/db';
 import type { Tab } from '../App';
 import { useProfile, useLatestBodyLog, useExerciseMap, useRoutines, useWeeklyPlan } from '../lib/hooks';
 import { calcDailyBurn, fmtKcal } from '../lib/calc';
 import { todayStr, fmtJP, parseDate } from '../lib/date';
 import { shouldRemindBackup, daysSinceBackup } from '../lib/backupMeta';
+import { getActiveCaloriesForDate, isHealthAvailable, requestHealthPermission } from '../native/health';
 import { Card } from '../components/ui';
 import { NumberText } from '../components/inputs';
 import { upsertBodyLog, upsertActivityLog } from '../lib/repo';
@@ -32,6 +33,24 @@ export default function HomePage({ onOpenSettings, onGoto }: Props) {
   const todayPlanRoutine = todayPlanId != null ? (routines ?? []).find((r) => r.id === todayPlanId) : undefined;
 
   const [backupDismissed, setBackupDismissed] = useState(false);
+  const [healthAvailable, setHealthAvailable] = useState(false);
+  const [healthBusy, setHealthBusy] = useState(false);
+
+  useEffect(() => {
+    void isHealthAvailable().then(setHealthAvailable);
+  }, []);
+
+  const syncHealth = async () => {
+    setHealthBusy(true);
+    try {
+      if (!(await requestHealthPermission())) return;
+      const kcal = await getActiveCaloriesForDate(today);
+      if (kcal != null && kcal > 0) await upsertActivityLog(today, kcal);
+    } finally {
+      setHealthBusy(false);
+    }
+  };
+
   const now = Date.now();
   // ある程度データが溜まっていて、最後のバックアップから時間が経っていたら催促
   const showBackupReminder =
@@ -242,6 +261,17 @@ export default function HomePage({ onOpenSettings, onGoto }: Props) {
             />
           </label>
         </div>
+        {healthAvailable && (
+          <button
+            type="button"
+            onClick={() => void syncHealth()}
+            disabled={healthBusy}
+            className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl bg-rose-50 px-4 py-2.5 text-sm font-bold text-rose-600 transition active:scale-[0.98] disabled:opacity-50"
+          >
+            <HeartPulse size={16} />
+            {healthBusy ? '取得中…' : 'ヘルスから運動消費を取得'}
+          </button>
+        )}
         <p className="mt-2 text-[11px] text-slate-400">
           入力すると自動で保存されます。運動消費はスマートウォッチ等の実測値を入力してください。
         </p>

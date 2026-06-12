@@ -29,4 +29,13 @@ export async function initNative(): Promise<void> {
   } catch {
     // SplashScreenプラグイン未対応環境は無視
   }
+  // 設定済みリマインダーを起動時に再スケジュール（OS再起動・再インストール後も確実にする）
+  try {
+    const { getReminder } = await import('../lib/reminder');
+    const { scheduleDailyReminder } = await import('./notifications');
+    const r = getReminder();
+    if (r.enabled) await scheduleDailyReminder(r.hour, r.minute);
+  } catch {
+    // 通知未対応環境は無視
+  }
 }
