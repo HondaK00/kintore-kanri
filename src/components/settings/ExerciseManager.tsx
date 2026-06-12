@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { SlidersHorizontal, Trash2 } from 'lucide-react';
+import { ChevronRight, Trash2 } from 'lucide-react';
 import { db, type BodyPart, type Exercise } from '../../db/db';
 import { BODY_PARTS } from '../../db/presets';
 import { hasManualMuscles, MUSCLE_LABELS, resolveMuscles } from '../../db/muscles';
 import { useExercises } from '../../lib/hooks';
 import { deleteExercise } from '../../lib/repo';
 import { Card, PrimaryButton } from '../ui';
-import { MuscleEditorSheet } from '../MuscleEditor';
+import { ExerciseEditorSheet } from '../MuscleEditor';
 
 export function ExerciseManager() {
   const exercises = useExercises();
@@ -70,32 +70,31 @@ export function ExerciseManager() {
               {list.map((e) => {
                 const m = resolveMuscles(e);
                 return (
-                  <div key={e.id} className="flex items-center gap-2 px-4 py-2.5">
-                    <div className="min-w-0 flex-1">
-                      <span className="text-sm font-semibold">
-                        {e.name}
-                        {!e.isPreset && (
-                          <span className="ml-2 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600">
-                            追加
-                          </span>
-                        )}
-                        {hasManualMuscles(e) && (
-                          <span className="ml-2 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-600">
-                            筋肉カスタム
-                          </span>
-                        )}
-                      </span>
-                      <span className="block truncate text-[11px] font-bold text-slate-400">
-                        {m.primary.map((x) => MUSCLE_LABELS[x]).join('・') || '対象筋なし'}
-                      </span>
-                    </div>
+                  <div key={e.id} className="flex items-center gap-1 px-2 py-1">
                     <button
                       type="button"
                       onClick={() => setEditing(e)}
-                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-400 transition active:bg-slate-100"
-                      aria-label="対象筋を編集"
+                      className="flex min-w-0 flex-1 items-center gap-2 rounded-xl px-2 py-1.5 text-left transition active:bg-slate-50"
                     >
-                      <SlidersHorizontal size={15} />
+                      <span className="min-w-0 flex-1">
+                        <span className="text-sm font-semibold">
+                          {e.name}
+                          {!e.isPreset && (
+                            <span className="ml-2 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600">
+                              追加
+                            </span>
+                          )}
+                          {hasManualMuscles(e) && (
+                            <span className="ml-2 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-600">
+                              カスタム
+                            </span>
+                          )}
+                        </span>
+                        <span className="block truncate text-[11px] font-bold text-slate-400">
+                          {m.primary.map((x) => MUSCLE_LABELS[x]).join('・') || '対象筋なし'}
+                        </span>
+                      </span>
+                      <ChevronRight size={15} className="shrink-0 text-slate-300" />
                     </button>
                     <button
                       type="button"
@@ -113,7 +112,7 @@ export function ExerciseManager() {
       })}
 
       {editing && (
-        <MuscleEditorSheet key={editing.id} exercise={editing} open onClose={() => setEditing(null)} />
+        <ExerciseEditorSheet key={editing.id} exercise={editing} open onClose={() => setEditing(null)} />
       )}
     </div>
   );
