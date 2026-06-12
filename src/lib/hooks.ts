@@ -1,9 +1,19 @@
 import { useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, type Exercise } from '../db/db';
+import { db, type Exercise, type Routine } from '../db/db';
 
 export function useProfile() {
   return useLiveQuery(() => db.profile.get(1));
+}
+
+export function useRoutines(): Routine[] | undefined {
+  return useLiveQuery(() => db.routines.orderBy('sortOrder').toArray());
+}
+
+/** 曜日(0=日〜6=土) → routineId のマップ */
+export function useWeeklyPlan(): Map<number, number | null> {
+  const rows = useLiveQuery(() => db.weeklyPlan.toArray(), []);
+  return useMemo(() => new Map((rows ?? []).map((w) => [w.weekday, w.routineId])), [rows]);
 }
 
 export function useExercises() {

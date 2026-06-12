@@ -70,6 +70,16 @@ try {
   if (firstWeight !== '65') throw new Error(`set-key regression: 削除後の先頭重量が65でなく${firstWeight}`);
   await shot('03-workout.png');
 
+  // --- 筋肉図（対象筋ハイライト）: インクラインダンベルプレス＝大胸筋上部 ---
+  const incline = page.locator('div.rounded-2xl').filter({ hasText: 'インクラインダンベルプレス' }).first();
+  await incline.locator('button[aria-label="対象筋を見る"]').click();
+  await page.waitForSelector('text=の対象筋');
+  await page.waitForTimeout(300);
+  await shot('10-muscle-map.png');
+  await page.locator('div.fixed.z-50 .bg-slate-200').first().click({ position: { x: 5, y: 5 } }).catch(() => {});
+  await page.keyboard.press('Escape').catch(() => {});
+  await page.mouse.click(10, 10); // シート外をタップして閉じる
+
   // --- 食事: 新規入力で追加 ---
   await tab('食事');
   await page.locator('button:has-text("追加")').first().click();
@@ -115,6 +125,22 @@ try {
   await page.locator('button:has-text("バックアップを書き出す")').click();
   await (await dl).cancel?.();
   await page.waitForSelector('text=最終バックアップ:');
+
+  // --- 週間スケジュール: 今日の曜日に「脚の日」を割り当て ---
+  const settingsBack2 = page.locator('div.fixed.z-40 header button');
+  await settingsBack2.click(); // データ管理 → メニュー
+  await page.locator('button:has-text("週間スケジュール")').click();
+  await page.waitForSelector('text=曜日ごとのメニュー');
+  const wd = await page.evaluate(() => new Date().getDay());
+  await page.locator('select').nth(wd).selectOption({ label: '脚の日' });
+  await shot('11-weekly-schedule.png');
+  await settingsBack2.click(); // 週間 → メニュー
+  await settingsBack2.click(); // メニュー → 閉じる
+
+  // --- 筋トレ画面に「今日の予定」バナーが出るか ---
+  await tab('筋トレ');
+  await page.waitForSelector('text=曜日の予定');
+  await shot('12-workout-plan.png');
 
   console.log(errors.length === 0 ? '✓ smoke OK (no console/page errors)' : `✗ errors:\n${errors.join('\n')}`);
 } catch (e) {

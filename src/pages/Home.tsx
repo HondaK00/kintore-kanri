@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Settings, ChevronRight, Dumbbell, CloudUpload, X } from 'lucide-react';
+import { Settings, ChevronRight, Dumbbell, CloudUpload, CalendarCheck, X } from 'lucide-react';
 import { db } from '../db/db';
 import type { Tab } from '../App';
-import { useProfile, useLatestBodyLog, useExerciseMap } from '../lib/hooks';
+import { useProfile, useLatestBodyLog, useExerciseMap, useRoutines, useWeeklyPlan } from '../lib/hooks';
 import { calcDailyBurn, fmtKcal } from '../lib/calc';
-import { todayStr, fmtJP } from '../lib/date';
+import { todayStr, fmtJP, parseDate } from '../lib/date';
 import { shouldRemindBackup, daysSinceBackup } from '../lib/backupMeta';
 import { Card } from '../components/ui';
 import { NumberText } from '../components/inputs';
@@ -26,6 +26,10 @@ export default function HomePage({ onOpenSettings, onGoto }: Props) {
   const todayEntries = useLiveQuery(() => db.workouts.where('date').equals(today).sortBy('id'), [today]);
   const workoutCount = useLiveQuery(() => db.workouts.count(), []);
   const exMap = useExerciseMap();
+  const routines = useRoutines();
+  const weeklyPlan = useWeeklyPlan();
+  const todayPlanId = weeklyPlan.get(parseDate(today).getDay()) ?? null;
+  const todayPlanRoutine = todayPlanId != null ? (routines ?? []).find((r) => r.id === todayPlanId) : undefined;
 
   const [backupDismissed, setBackupDismissed] = useState(false);
   const now = Date.now();
@@ -173,6 +177,14 @@ export default function HomePage({ onOpenSettings, onGoto }: Props) {
             <ChevronRight size={14} />
           </button>
         </div>
+        {todayPlanRoutine && (
+          <div className="mt-2 flex items-center gap-1.5 rounded-xl bg-emerald-50 px-3 py-2">
+            <CalendarCheck size={14} className="shrink-0 text-emerald-600" />
+            <span className="text-xs font-bold text-emerald-700">
+              今日の予定: {todayPlanRoutine.name}
+            </span>
+          </div>
+        )}
         {todayEntries && todayEntries.length > 0 ? (
           <div className="mt-3 space-y-1.5">
             {todayEntries.map((e) => (
@@ -183,7 +195,9 @@ export default function HomePage({ onOpenSettings, onGoto }: Props) {
             ))}
           </div>
         ) : (
-          <p className="mt-3 text-sm text-slate-400">まだ記録がありません。今日も頑張りましょう 💪</p>
+          <p className="mt-3 text-sm text-slate-400">
+            {todayPlanRoutine ? '「記録する」から予定のメニューを始めましょう 💪' : 'まだ記録がありません。今日も頑張りましょう 💪'}
+          </p>
         )}
       </Card>
 

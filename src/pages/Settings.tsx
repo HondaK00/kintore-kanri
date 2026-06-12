@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  CalendarDays,
   ChevronLeft,
   ChevronRight,
   Database,
@@ -10,16 +11,18 @@ import {
 } from 'lucide-react';
 import { ProfileForm } from '../components/settings/ProfileForm';
 import { RoutineManager } from '../components/settings/RoutineManager';
+import { WeeklySchedule } from '../components/settings/WeeklySchedule';
 import { ExerciseManager } from '../components/settings/ExerciseManager';
 import { FoodManager } from '../components/settings/FoodManager';
 import { DataManager } from '../components/settings/DataManager';
 
-type View = 'menu' | 'profile' | 'routines' | 'exercises' | 'foods' | 'data';
+type View = 'menu' | 'profile' | 'routines' | 'weekly' | 'exercises' | 'foods' | 'data';
 
 const TITLES: Record<View, string> = {
   menu: '設定',
   profile: 'プロフィール・目標',
   routines: 'ルーティン管理',
+  weekly: '週間スケジュール',
   exercises: '種目管理',
   foods: 'マイ食品管理',
   data: 'データ管理',
@@ -28,6 +31,7 @@ const TITLES: Record<View, string> = {
 const MENU: { view: View; label: string; desc: string; Icon: typeof User }[] = [
   { view: 'profile', label: 'プロフィール・目標', desc: '基礎代謝の計算と目標設定', Icon: User },
   { view: 'routines', label: 'ルーティン管理', desc: '「胸の日」などの種目セット', Icon: NotebookText },
+  { view: 'weekly', label: '週間スケジュール', desc: '曜日ごとに行うメニューを設定', Icon: CalendarDays },
   { view: 'exercises', label: '種目管理', desc: 'トレーニング種目の追加・削除', Icon: Dumbbell },
   { view: 'foods', label: 'マイ食品管理', desc: 'よく食べる食品の編集', Icon: UtensilsCrossed },
   { view: 'data', label: 'データ管理', desc: 'バックアップ・復元', Icon: Database },
@@ -75,6 +79,7 @@ export default function SettingsPage({ onClose }: { onClose: () => void }) {
         )}
         {view === 'profile' && <ProfileForm />}
         {view === 'routines' && <RoutineManager />}
+        {view === 'weekly' && <WeeklySchedule />}
         {view === 'exercises' && <ExerciseManager />}
         {view === 'foods' && <FoodManager />}
         {view === 'data' && <DataManager />}

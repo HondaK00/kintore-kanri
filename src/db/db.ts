@@ -1,5 +1,6 @@
 import Dexie, { type Table } from 'dexie';
 import { PRESET_EXERCISES, PRESET_ROUTINES } from './presets';
+import type { MuscleTarget } from './muscles';
 
 export type Sex = 'male' | 'female';
 export type BodyPart = '胸' | '背中' | '脚' | '肩' | '腕' | '体幹' | 'その他';
@@ -24,6 +25,12 @@ export interface Exercise {
   name: string;
   bodyPart: BodyPart;
   isPreset: boolean;
+  targetMuscles?: MuscleTarget | null; // カスタム種目の対象筋（プリセットは名前から解決）
+}
+
+export interface WeeklyPlanEntry {
+  weekday: number; // 0=日 〜 6=土（主キー）
+  routineId: number | null; // その曜日に行うルーティン。null=休み
 }
 
 export interface Routine {
@@ -96,6 +103,7 @@ class KintoreDB extends Dexie {
   mealLogs!: Table<MealLog, number>;
   bodyLogs!: Table<BodyLog, number>;
   activityLogs!: Table<ActivityLog, number>;
+  weeklyPlan!: Table<WeeklyPlanEntry, number>;
 
   constructor() {
     super('kintore-db');
@@ -112,6 +120,11 @@ class KintoreDB extends Dexie {
       mealLogs: '++id, date',
       bodyLogs: '++id, &date',
       activityLogs: '++id, &date',
+    });
+
+    // v2: 曜日ごとのルーティン割り当て（週間スケジュール）テーブルを追加
+    this.version(2).stores({
+      weeklyPlan: 'weekday',
     });
 
     this.on('populate', async () => {

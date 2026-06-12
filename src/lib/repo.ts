@@ -26,16 +26,26 @@ export async function upsertActivityLog(date: string, kcal: number): Promise<voi
   });
 }
 
-/** ルーティンを削除し、トレーニング記録側のroutineId参照もクリアする（記録自体は残す） */
+/** ルーティンを削除し、トレーニング記録と週間スケジュールの参照もクリアする（記録自体は残す） */
 export async function deleteRoutine(routineId: number): Promise<void> {
-  await db.transaction('rw', db.routines, db.workouts, async () => {
+  await db.transaction('rw', db.routines, db.workouts, db.weeklyPlan, async () => {
     await db.routines.delete(routineId);
     await db.workouts
       .filter((e) => e.routineId === routineId)
       .modify((e) => {
         e.routineId = null;
       });
+    await db.weeklyPlan
+      .filter((w) => w.routineId === routineId)
+      .modify((w) => {
+        w.routineId = null;
+      });
   });
+}
+
+/** 曜日(0=日〜6=土)にルーティンを割り当てる。routineId=nullで休み */
+export async function setWeeklyDay(weekday: number, routineId: number | null): Promise<void> {
+  await db.weeklyPlan.put({ weekday, routineId });
 }
 
 /** 種目を削除し、ルーティンの参照とトレーニング記録の孤児レコードも取り除く */
@@ -63,6 +73,7 @@ const TABLE_NAMES = [
   'mealLogs',
   'bodyLogs',
   'activityLogs',
+  'weeklyPlan',
 ] as const;
 
 export async function exportData(): Promise<string> {
@@ -103,6 +114,7 @@ const VALIDATORS: Record<string, (r: Record<string, unknown>) => boolean> = {
   mealLogs: (r) => isStr(r.date) && isStr(r.name) && isNum(r.kcal),
   bodyLogs: (r) => isStr(r.date) && isNum(r.weightKg),
   activityLogs: (r) => isStr(r.date) && isNum(r.kcal),
+  weeklyPlan: (r) => isNum(r.weekday) && r.weekday >= 0 && r.weekday <= 6,
 };
 
 /** workoutレコードのsetsを正規化（数値化＋idの補完）。旧バックアップ互換 */
@@ -147,6 +159,12 @@ export async function importData(json: string): Promise<void> {
   cleaned.routines = cleaned.routines.map((r) => ({
     ...r,
     exerciseIds: (r.exerciseIds as unknown[]).filter((id) => isNum(id) && exerciseIds.has(id)),
+  }));
+  // 参照整合性: 週間スケジュールが指す実在しないルーティン参照をnull(休み)に
+  const routineIds = new Set(cleaned.routines.map((r) => r.id).filter(isNum));
+  cleaned.weeklyPlan = cleaned.weeklyPlan.map((w) => ({
+    ...w,
+    routineId: isNum(w.routineId) && routineIds.has(w.routineId) ? w.routineId : null,
   }));
 
   const tables = TABLE_NAMES.map((n) => db.table(n));
