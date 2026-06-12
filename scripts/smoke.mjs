@@ -135,6 +135,21 @@ try {
   await page.locator('select').nth(wd).selectOption({ label: '脚の日' });
   await shot('11-weekly-schedule.png');
   await settingsBack2.click(); // 週間 → メニュー
+
+  // --- 種目管理: 対象筋エディタを開いて編集・保存 ---
+  await page.locator('button:has-text("種目管理")').click();
+  await page.waitForSelector('text=カスタム種目を追加');
+  // ベンチプレス行の編集ボタン
+  const benchRow = page.locator('div').filter({ hasText: /^ベンチプレス/ }).locator('button[aria-label="対象筋を編集"]').first();
+  await benchRow.click();
+  await page.waitForSelector('text=の対象筋');
+  await page.waitForTimeout(300);
+  await shot('13-muscle-editor.png');
+  // 「大胸筋下部」をタップして主働筋に追加 → 保存
+  await page.locator('div.fixed.z-50 button:has-text("大胸筋下部")').click();
+  await page.locator('div.fixed.z-50 button:has-text("保存する")').click();
+  await page.waitForSelector('text=筋肉カスタム');
+  await settingsBack2.click(); // 種目管理 → メニュー
   await settingsBack2.click(); // メニュー → 閉じる
 
   // --- 筋トレ画面に「今日の予定」バナーが出るか ---
